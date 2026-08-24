@@ -122,6 +122,40 @@ class PetValidatorTests {
 			assertTrue(errors.hasFieldErrors("birthDate"));
 		}
 
+		@Test
+		void validateWithWhitespaceOnlyName() {
+			petType.setName(petTypeName);
+			pet.setName("   ");
+			pet.setType(petType);
+			pet.setBirthDate(petBirthDate);
+
+			petValidator.validate(pet, errors);
+
+			// Expect name field error because only whitespace is invalid
+			// (StringUtils.hasText)
+			assertTrue(errors.hasFieldErrors("name"));
+		}
+
+		@Test
+		void validatePersistedPetWithNullType() {
+			// Pet is persisted by setting an id
+			pet.setId(42);
+			pet.setName(petName);
+			pet.setType(null);
+			pet.setBirthDate(petBirthDate);
+
+			petValidator.validate(pet, errors);
+
+			// type is not required for persisted pets (id != null), so no error on type
+			assertFalse(errors.hasFieldErrors("type"));
+		}
+
+	}
+
+	@Test
+	void supportsWithOtherClasses() {
+		assertTrue(petValidator.supports(Pet.class));
+		assertFalse(petValidator.supports(Owner.class));
 	}
 
 }
