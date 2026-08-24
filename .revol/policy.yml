@@ -1,0 +1,81 @@
+# Spring PetClinic policy — Class A OSS dogfood (java-maven twin of Madis).
+# Copy into the clone as `.revol/policy.yml`.
+# Clone: git clone https://github.com/spring-projects/spring-petclinic.git
+version: 0
+
+client_id: petclinic
+repo_url: https://github.com/spring-projects/spring-petclinic.git
+# Single-module repo: pom.xml lives at clone root.
+# Do NOT set pilot_service / gates.l1.service_path (those are Madis-style monorepo dirs).
+
+change_classes:
+  A:
+    description: Mechanical, low blast-radius work
+    auto_merge: true
+    requires_l2: false
+    requires_l3: false
+    allowed_scopes:
+      - unit_tests
+      - lint_fix
+      - dep_bump
+      - docstrings
+  B:
+    description: Bounded changes within one module
+    auto_merge: false
+    requires_l2: true
+    requires_l3: false
+    allowed_scopes:
+      - ui_fix
+      - module_refactor
+      - api_docs
+  C:
+    description: Structural or security-sensitive changes
+    auto_merge: false
+    requires_l2: true
+    requires_l3: true
+    allowed_scopes:
+      - cross_module_refactor
+      - schema_change
+      - security_path
+
+gates:
+  l1:
+    stack: java-maven
+    # Prefer repo wrapper (./mvnw or mvnw.cmd). Override with REVOL_MAVEN_BIN if needed.
+    lint: true
+    tests: true
+    coverage_delta_min: 0
+    # Skip Docker-backed DB profiles during Class A dogfood
+    test_excludes:
+      - MySqlIntegrationTests
+      - PostgresIntegrationTests
+
+agents:
+  allowed:
+    - stub
+    - llm
+  models:
+    stub: stub-agent@0.1.0
+    llm: openai@gpt-4.1-mini
+  llm:
+    provider: openai_compat
+    max_correction_loops: 3
+    max_steps: 40
+    max_seconds: 900
+
+sandbox:
+  mode: managed
+  destroy_after_pr: true
+  network: none
+  egress_allowlist: []
+  guest_secrets: false
+
+provenance:
+  required_fields:
+    - pr_id
+    - change_class
+    - sandbox_id
+    - model
+    - prompt_hash
+    - gate_log
+    - created_at
