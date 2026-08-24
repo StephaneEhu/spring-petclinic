@@ -15,6 +15,9 @@
  */
 package org.springframework.samples.petclinic.vet;
 
+import java.util.Iterator;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.util.SerializationUtils;
 
@@ -36,6 +39,32 @@ class VetTests {
 		assertThat(other.getFirstName()).isEqualTo(vet.getFirstName());
 		assertThat(other.getLastName()).isEqualTo(vet.getLastName());
 		assertThat(other.getId()).isEqualTo(vet.getId());
+	}
+
+	@Test
+	void testSpecialtiesHelpers() {
+		Vet vet = new Vet();
+		// Initially no specialties
+		assertThat(vet.getNrOfSpecialties()).isEqualTo(0);
+
+		Specialty specialty1 = new Specialty();
+		specialty1.setName("Radiology");
+		Specialty specialty2 = new Specialty();
+		specialty2.setName("Surgery");
+
+		// Add specialties out of natural order
+		vet.addSpecialty(specialty2);
+		vet.addSpecialty(specialty1);
+
+		assertThat(vet.getNrOfSpecialties()).isEqualTo(2);
+
+		// getSpecialties should return sorted by name
+		List<Specialty> specialties = vet.getSpecialties();
+		assertThat(specialties).hasSize(2);
+
+		Iterator<Specialty> it = specialties.iterator();
+		assertThat(it.next().getName()).isEqualTo("Radiology");
+		assertThat(it.next().getName()).isEqualTo("Surgery");
 	}
 
 }
