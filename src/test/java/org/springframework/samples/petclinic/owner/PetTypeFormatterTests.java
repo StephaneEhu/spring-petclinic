@@ -52,6 +52,9 @@ class PetTypeFormatterTests {
 		this.petTypeFormatter = new PetTypeFormatter(types);
 	}
 
+	/**
+	 * print should return the PetType's name if set (not null).
+	 */
 	@Test
 	void testPrint() {
 		PetType petType = new PetType();
@@ -60,6 +63,19 @@ class PetTypeFormatterTests {
 		assertThat(petTypeName).isEqualTo("Hamster");
 	}
 
+	/**
+	 * print documents current null-safe behavior: null name becomes {@code "<null>"}.
+	 */
+	@Test
+	void testPrintNullName() {
+		PetType petType = new PetType();
+		String result = petTypeFormatter.print(petType, Locale.ENGLISH);
+		assertThat(result).isEqualTo("<null>");
+	}
+
+	/**
+	 * parse should find a PetType by exact name from repository
+	 */
 	@Test
 	void shouldParse() throws ParseException {
 		given(types.findPetTypes()).willReturn(makePetTypes());
@@ -67,11 +83,44 @@ class PetTypeFormatterTests {
 		assertThat(petType.getName()).isEqualTo("Bird");
 	}
 
+	/**
+	 * parse should throw ParseException when name is not found in catalog
+	 */
 	@Test
 	void shouldThrowParseException() {
 		given(types.findPetTypes()).willReturn(makePetTypes());
 		Assertions.assertThrows(ParseException.class, () -> {
 			petTypeFormatter.parse("Fish", Locale.ENGLISH);
+		});
+	}
+
+	/**
+	 * parse should throw ParseException when repository catalog is empty, for any name
+	 */
+	@Test
+	void testParseEmptyCatalogThrows() {
+		// Mock findPetTypes to return empty list
+		given(types.findPetTypes()).willReturn(new ArrayList<>());
+		Assertions.assertThrows(ParseException.class, () -> {
+			petTypeFormatter.parse("Dog", Locale.ENGLISH);
+		});
+	}
+
+	/**
+	 * parse is case-sensitive as intended: lowercase "bird" fails when catalog contains
+	 * "Bird"
+	 */
+	@Test
+	void testParseCaseSensitive() {
+		// Mock catalog with "Bird" only
+		List<PetType> catalog = new ArrayList<>();
+		PetType bird = new PetType();
+		bird.setName("Bird");
+		catalog.add(bird);
+		given(types.findPetTypes()).willReturn(catalog);
+		Assertions.assertThrows(ParseException.class, () -> {
+			// lowercase "bird" should fail as parse is case-sensitive
+			petTypeFormatter.parse("bird", Locale.ENGLISH);
 		});
 	}
 
